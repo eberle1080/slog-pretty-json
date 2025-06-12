@@ -15,6 +15,7 @@ import (
 	"github.com/tidwall/pretty"
 )
 
+// NewHandler returns a slog.Handler that writes formatted JSON to w.
 func NewHandler(w io.Writer, slogOpts *slog.HandlerOptions, opts ...Option) (slog.Handler, error) {
 	handlerOpts := &options{
 		styleName: "monokai", // default style
@@ -46,7 +47,7 @@ func createHandler(w io.Writer, slogOpts *slog.HandlerOptions, handlerOpts *opti
 		return h
 	}
 
-	// Why are you even using this library if you don't want pretty or color? Whatever. Here you go.
+	// If neither pretty nor color output is requested use the plain JSON handler.
 	if !handlerOpts.pretty && !handlerOpts.color {
 		return factory(w), nil
 	}
@@ -73,7 +74,7 @@ func createHandler(w io.Writer, slogOpts *slog.HandlerOptions, handlerOpts *opti
 
 	return &handler{
 		h:           factory(w),
-		m:           new(sync.Mutex),
+		mu:          new(sync.Mutex),
 		factory:     factory,
 		out:         w,
 		lexer:       l,
@@ -85,8 +86,8 @@ func createHandler(w io.Writer, slogOpts *slog.HandlerOptions, handlerOpts *opti
 }
 
 type handler struct {
-	h slog.Handler
-	m *sync.Mutex
+	h  slog.Handler
+	mu *sync.Mutex
 
 	factory func(w io.Writer) slog.Handler
 
@@ -125,8 +126,8 @@ func (h *handler) Handle(ctx context.Context, record slog.Record) error {
 		return err
 	}
 
-	h.m.Lock()
-	defer h.m.Unlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	return h.formatter.Format(h.out, h.style, it)
 }

@@ -4,7 +4,7 @@ import "log/slog"
 
 type Option func(*options)
 
-// WithStyle sets the style.
+// WithStyle sets the chroma style used for colorizing JSON.
 // See https://xyproto.github.io/splash/docs/
 func WithStyle(style string) Option {
 	return func(opts *options) {
@@ -12,24 +12,28 @@ func WithStyle(style string) Option {
 	}
 }
 
+// WithAttrs adds the provided attributes to every record handled.
 func WithAttrs(attrs []slog.Attr) Option {
 	return func(opts *options) {
 		opts.attrs = attrs
 	}
 }
 
+// WithGroup adds a slog group around all records.
 func WithGroup(group string) Option {
 	return func(opts *options) {
 		opts.groups = append(opts.groups, group)
 	}
 }
 
+// WithPretty toggles prettifying of the JSON output.
 func WithPretty(pretty bool) Option {
 	return func(opts *options) {
 		opts.pretty = pretty
 	}
 }
 
+// WithColor toggles ANSI color output.
 func WithColor(color bool) Option {
 	return func(opts *options) {
 		opts.color = color

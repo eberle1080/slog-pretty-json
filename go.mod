@@ -1,6 +1,6 @@
 module github.com/eberle1080/slog-pretty-json
 
-go 1.24.2
+go 1.22
 
 require (
 	github.com/alecthomas/chroma v0.10.0
