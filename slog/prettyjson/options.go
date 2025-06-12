@@ -24,10 +24,25 @@ func WithGroup(group string) Option {
 	}
 }
 
+func WithPretty(pretty bool) Option {
+	return func(opts *options) {
+		opts.pretty = pretty
+	}
+}
+
+func WithColor(color bool) Option {
+	return func(opts *options) {
+		opts.color = color
+	}
+}
+
 type options struct {
 	styleName string
 	attrs     []slog.Attr
 	groups    []string
+
+	pretty bool
+	color  bool
 }
 
 func (o *options) clone() *options {
@@ -53,5 +68,7 @@ func (o *options) clone() *options {
 		styleName: o.styleName,
 		attrs:     attrs,
 		groups:    groups,
+		pretty:    o.pretty,
+		color:     o.color,
 	}
 }

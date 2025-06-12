@@ -18,6 +18,8 @@ import (
 func NewHandler(w io.Writer, slogOpts *slog.HandlerOptions, opts ...Option) (slog.Handler, error) {
 	handlerOpts := &options{
 		styleName: "monokai", // default style
+		pretty:    true,
+		color:     true,
 	}
 
 	for _, opt := range opts {
@@ -44,6 +46,12 @@ func createHandler(w io.Writer, slogOpts *slog.HandlerOptions, handlerOpts *opti
 		return h
 	}
 
+	// Why are you even using this library if you don't want pretty or color? Whatever. Here you go.
+	if !handlerOpts.pretty && !handlerOpts.color {
+		return factory(w), nil
+	}
+
+	// Get the JSON lexer
 	l := lexers.Get("json")
 	if l == nil {
 		return nil, fmt.Errorf("%w: failed to get lexer for json", ErrCreationFailed)
@@ -51,11 +59,13 @@ func createHandler(w io.Writer, slogOpts *slog.HandlerOptions, handlerOpts *opti
 
 	l = chroma.Coalesce(l)
 
+	// Get the terminal formatter
 	f := formatters.Get("terminal")
 	if f == nil {
 		return nil, fmt.Errorf("%w: failed to get formatter for terminal", ErrCreationFailed)
 	}
 
+	// Get the style
 	s := styles.Get(handlerOpts.styleName)
 	if s == nil {
 		return nil, fmt.Errorf("%w: failed to get style for %q", ErrCreationFailed, handlerOpts.styleName)
@@ -98,7 +108,17 @@ func (h *handler) Handle(ctx context.Context, record slog.Record) error {
 		return err
 	}
 
-	prettyBytes := pretty.Pretty(buf.Bytes())
+	var prettyBytes []byte
+	if h.handlerOpts.pretty {
+		prettyBytes = pretty.Pretty(buf.Bytes())
+	} else {
+		prettyBytes = buf.Bytes()
+	}
+
+	if !h.handlerOpts.color {
+		_, err := h.out.Write(prettyBytes)
+		return err
+	}
 
 	it, err := h.lexer.Tokenise(nil, string(prettyBytes))
 	if err != nil {
