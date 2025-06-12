@@ -4,7 +4,7 @@ A simple [slog](https://pkg.go.dev/log/slog) handler that outputs nicely
 formatted JSON. The handler can be used as a drop in replacement for the
 standard `slog.JSONHandler` while still supporting colorised output.
 
-![Example output](https://github.com/user-attachments/assets/79956f19-f3b7-4cb7-9c36-8cfaae81d80b)
+![Example output](https://github.com/user-attachments/assets/89e91a50-15be-43f1-9973-0f4aaebc9f75)
 
 ## Installation
 
