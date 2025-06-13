@@ -126,10 +126,18 @@ func (h *handler) Handle(ctx context.Context, record slog.Record) error {
 		return err
 	}
 
+	var outBuf bytes.Buffer
+
+	if err = h.formatter.Format(&outBuf, h.style, it); err != nil {
+		return err
+	}
+
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	return h.formatter.Format(h.out, h.style, it)
+	_, err = h.out.Write(outBuf.Bytes())
+
+	return err
 }
 
 func (h *handler) Enabled(ctx context.Context, level slog.Level) bool {
