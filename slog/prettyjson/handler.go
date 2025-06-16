@@ -21,6 +21,7 @@ func NewHandler(w io.Writer, slogOpts *slog.HandlerOptions, opts ...Option) (slo
 		styleName: "monokai", // default style
 		pretty:    true,
 		color:     true,
+		mu:        new(sync.Mutex),
 	}
 
 	for _, opt := range opts {
@@ -74,7 +75,7 @@ func createHandler(w io.Writer, slogOpts *slog.HandlerOptions, handlerOpts *opti
 
 	return &handler{
 		h:           factory(w),
-		mu:          new(sync.Mutex),
+		mu:          handlerOpts.mu,
 		factory:     factory,
 		out:         w,
 		lexer:       l,

@@ -1,6 +1,9 @@
 package prettyjson
 
-import "log/slog"
+import (
+	"log/slog"
+	"sync"
+)
 
 type Option func(*options)
 
@@ -47,6 +50,8 @@ type options struct {
 
 	pretty bool
 	color  bool
+
+	mu *sync.Mutex
 }
 
 func (o *options) clone() *options {
@@ -74,5 +79,6 @@ func (o *options) clone() *options {
 		groups:    groups,
 		pretty:    o.pretty,
 		color:     o.color,
+		mu:        o.mu,
 	}
 }
