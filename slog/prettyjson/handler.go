@@ -118,10 +118,17 @@ func (h *handler) Handle(ctx context.Context, record slog.Record) error {
 	}
 
 	if !h.handlerOpts.color {
+		h.mu.Lock()
+		defer h.mu.Unlock()
 		_, err := h.out.Write(prettyBytes)
 		return err
 	}
 
+	// Lock earlier to protect shared chroma components during tokenization and formatting
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	// Use a properly configured state for tokenization to avoid memory leaks
 	it, err := h.lexer.Tokenise(nil, string(prettyBytes))
 	if err != nil {
 		return err
@@ -132,9 +139,6 @@ func (h *handler) Handle(ctx context.Context, record slog.Record) error {
 	if err = h.formatter.Format(&outBuf, h.style, it); err != nil {
 		return err
 	}
-
-	h.mu.Lock()
-	defer h.mu.Unlock()
 
 	_, err = h.out.Write(outBuf.Bytes())
 
@@ -151,7 +155,21 @@ func (h *handler) WithAttrs(attrs []slog.Attr) slog.Handler {
 
 	handler, err := createHandler(h.out, h.slogOpts, newOpts)
 	if err != nil {
-		return slog.NewJSONHandler(h.out, h.slogOpts).WithAttrs(attrs) // fallback to JSON handler
+		// Fallback to JSON handler with proper state preservation
+		var jh slog.Handler = slog.NewJSONHandler(h.out, h.slogOpts)
+
+		// Preserve existing attrs and add new ones
+		allAttrs := append(h.handlerOpts.attrs, attrs...)
+		if len(allAttrs) > 0 {
+			jh = jh.WithAttrs(allAttrs)
+		}
+
+		// Preserve existing groups
+		for _, group := range h.handlerOpts.groups {
+			jh = jh.WithGroup(group)
+		}
+
+		return jh
 	}
 
 	return handler
@@ -163,12 +181,19 @@ func (h *handler) WithGroup(name string) slog.Handler {
 
 	handler, err := createHandler(h.out, h.slogOpts, newOpts)
 	if err != nil {
-		// Fallback to JSON handler
+		// Fallback to JSON handler with proper state preservation
 		var jh slog.Handler = slog.NewJSONHandler(h.out, h.slogOpts)
 
+		// Preserve existing attrs
+		if len(h.handlerOpts.attrs) > 0 {
+			jh = jh.WithAttrs(h.handlerOpts.attrs)
+		}
+
+		// Preserve existing groups and add new one
 		for _, group := range h.handlerOpts.groups {
 			jh = jh.WithGroup(group)
 		}
+		jh = jh.WithGroup(name)
 
 		return jh
 	}

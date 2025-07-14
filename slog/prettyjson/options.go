@@ -11,6 +11,9 @@ type Option func(*options)
 // See https://xyproto.github.io/splash/docs/
 func WithStyle(style string) Option {
 	return func(opts *options) {
+		if style == "" {
+			style = "monokai" // fallback to default
+		}
 		opts.styleName = style
 	}
 }
@@ -79,6 +82,8 @@ func (o *options) clone() *options {
 		groups:    groups,
 		pretty:    o.pretty,
 		color:     o.color,
-		mu:        o.mu,
+		// Intentionally share the mutex to prevent multi-line log records from clashing
+		// when writing to stdout concurrently
+		mu: o.mu,
 	}
 }
